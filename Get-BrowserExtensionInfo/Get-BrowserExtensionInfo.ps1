@@ -7,12 +7,25 @@
 #>
 
 #
-# Chrome
+# Global variables and types
 #
-function ProcessChrome
+enum Browser
 {
+   Chrome
+   Edge
+}
+
+#
+# Process a browser
+#
+function ProcessBrowser
+{
+   Param(
+      [Parameter(Mandatory)][Browser] $browser
+   )
+   
    # Get the user data directory. If it doesn't exist, we cannot proceed.
-   $userDataPath = GetChromeUserDataPath
+   $userDataPath = GetUserDataPath $browser
    if ($userDataPath -eq $null)
    {
       return
@@ -32,8 +45,82 @@ function ProcessChrome
          continue
       }
 
-      # Get extension info
+      # Get extension info...
       $extensionInfo = GetExtensionInfoFromProfile $profilePath
+
+      # ...and write it to stdout
+      PrintExtensionInfo "$browser" $profileDir $profiles $extensionInfo
+   }
+}
+
+#
+# Print collected extension info
+#
+function PrintExtensionInfo
+{
+   Param(
+      [Parameter(Mandatory)][string] $browserName,
+      [Parameter(Mandatory)][string] $profileDir,
+      [Parameter(Mandatory)][hashtable] $profiles,
+      [Parameter(Mandatory)][hashtable] $extensionInfo
+   )
+
+   # Field names
+   $osUserNameField                    = "OsUser"
+   $browserNameField                   = "Browser"
+   $profileDirField                    = "ProfileDir"
+   $profileNameField                   = "ProfileName"
+   $profileGaiaNameField               = "ProfileGaiaName"
+   $profileUserNameField               = "ProfileUserName"
+   $extensionIdField                   = "ExtensionId"
+   $extensionNameField                 = "ExtensionName"
+   $extensionVersionField              = "ExtensionVersion"
+   $extensionFromWebstoreField         = "ExtensionFromWebstore"
+   $extensionInstalledByDefaultField   = "ExtensionInstalledByDefault"
+   $extensionStateField                = "ExtensionState"
+   $extensionInstallTimeField          = "ExtensionInstallTime"
+
+   # Field data
+   $userName         = GetUsername
+   $profileName      = $profiles[$profileDir].profileName
+   $profileGaiaName  = $profiles[$profileDir].gaiaName
+   $profileUserName  = $profiles[$profileDir].userName
+
+   # Process each extension
+   foreach ($extensionId in $extensionInfo.keys)
+   {
+      $extensionName                = $extensionInfo[$extensionId].name
+      $extensionVersion             = $extensionInfo[$extensionId].version
+      $extensionFromWebstore        = $extensionInfo[$extensionId].fromWebstore
+      $extensionInstalledByDefault  = $extensionInfo[$extensionId].installedByDefault
+      $extensionState               = $extensionInfo[$extensionId].state
+      $extensionInstallTime         = $extensionInfo[$extensionId].installTime
+
+      $output = "$osUserNameField=`"$userName`" $browserNameField=`"$browserName`" $profileDirField=`"$profileDir`" $profileNameField=`"$profileName`" $profileGaiaNameField=`"$profileGaiaName`" $profileUserNameField=`"$profileUserName`" " + `
+                "$extensionIdField=`"$extensionId`" $extensionNameField=`"$extensionName`" $extensionVersionField=`"$extensionVersion`" $extensionFromWebstoreField=`"$extensionFromWebstore`" $extensionStateField=`"$extensionState`" " + `
+                "$extensionInstallTimeField=`"$extensionInstallTime`" $extensionInstalledByDefaultField=`"$extensionInstalledByDefault`""
+
+      Write-Output $output
+   }
+}
+
+#
+# Get the username. Format:
+#    1) Domain user: DOMAIN\USER
+#    2) Local user:  USER
+#
+function GetUsername
+{
+   $computer = $Env:COMPUTERNAME
+   $domain   = $Env:USERDOMAIN
+
+   if ($domain -ne $computer)
+   {
+      return $domain + "\" + $env:USERNAME
+   }
+   else
+   {
+      return $env:USERNAME
    }
 }
 
@@ -68,15 +155,28 @@ function GetExtensionInfoFromProfile
    # Extract properties of each extension
    foreach ($extensionId in $extensionIds)
    {
-      #
-      # Get properties of the extension
-      #
+      # Ignore extensions installed by default (that also don't show up in the extensions UI)
+      # $installedByDefault = $extensionsJson.$extensionId.was_installed_by_default
+      # if ($installedByDefault -eq $true)
+      # {
+      #    continue
+      # }
 
-      # Part of Chrome, not removable?
-      $installedByDefault = $extensionsJson.$extensionId.was_installed_by_default
-      if ($installedByDefault -ne $false)
+      # Ignore extensions located outside the user data directory (e.g., extensions that ship with the browser)
+      # Location values seen:
+      #    1: Profile (user data)
+      #    5: Install directory (program files)
+      #   10: Profile (user data) [not sure about the difference to 1]
+      $location = $extensionsJson.$extensionId.location
+      if ($location -eq 5)
       {
-         # This also gets rid of entries where was_installed_by_default does not exist
+         continue
+      }
+
+      # Ignore extensions whose directory does not exist
+      $extensionPath = $profilePath + "\Extensions\" + $extensionId
+      if (-not (Test-Path $extensionPath))
+      {
          continue
       }
 
@@ -96,11 +196,12 @@ function GetExtensionInfoFromProfile
       # Build a hashtable with the properties of this extension
       $extensionMap  =
       @{
-         name         = $name                                              # Extension name
-         version      = $version                                           # Extension version
-         fromWebstore = $extensionsJson.$extensionId.from_webstore         # Was the extension installed from the Chrome Web Store?
-         state        = $extensionsJson.$extensionId.state                 # Extension state (1 = enabled)
-         installTime  = $installTimeMs                                     # Installation timestamp as Unix epoch in ms
+         name                 = $name                                                  # Extension name
+         version              = $version                                               # Extension version
+         fromWebstore         = $extensionsJson.$extensionId.from_webstore             # Was the extension installed from the Chrome Web Store?
+         installedByDefault   = $extensionsJson.$extensionId.was_installed_by_default  # Was the extension installed by default?
+         state                = $extensionsJson.$extensionId.state                     # Extension state (1 = enabled)
+         installTime          = $installTimeMs                                         # Installation timestamp as Unix epoch in ms
       }
 
       # Add this extension to the list of extensions
@@ -182,10 +283,28 @@ function GetChromeProfiles
 #
 # Get the Chrome user data directory
 #
-function GetChromeUserDataPath
+function GetUserDataPath
 {
+   Param(
+      [Parameter(Mandatory)][Browser] $browser
+   )
+
+   $userDataPath = ""
+   
    # Build the path to the user data directory
-   $userDataPath = $env:LOCALAPPDATA + "\Google\Chrome\User Data"
+   if ($browser -eq [Browser]::Chrome)
+   {
+      $userDataPath = $env:LOCALAPPDATA + "\Google\Chrome\User Data"
+   }
+   elseif ($browser -eq [Browser]::Edge)
+   {
+      $userDataPath = $env:LOCALAPPDATA + "\Microsoft\Edge\User Data"
+   }
+   else
+   {
+      Write-Error "Invalid browser: $browser"
+      return
+   }
 
    # Check if the Chrome data directory exists
    if (Test-Path $userDataPath)
@@ -201,4 +320,5 @@ function GetChromeUserDataPath
 #
 # Script start
 #
-ProcessChrome
+ProcessBrowser Chrome
+ProcessBrowser Edge
