@@ -1,10 +1,10 @@
-# Get-BrowserExtensionInfo: Collect Information About the Installed Browser Extensions for the Current User
+# Get-BrowserExtensionInfo: Collect Information About the Installed Browser Extensions
 
-This script is part of the uberAgent practice guide [Querying Windows Event Log](https://uberagent.com/docs/uberagent/latest/practice-guides/querying-windows-event-log-event-ids/).
+This script is part of the uberAgent practice guide [NAME](URL).
 
 ## Description
 
-TODO
+This script is intended to be executed per user session. For each supported browser (see below), it determines the profile directories and extracts information about installed browser extensions from each profile.
 
 ## How to Run This Script
 
@@ -23,6 +23,7 @@ TODO
 ### Supported Browsers
 
 - Google Chrome
+- Microsoft Edge
 
 ### Requirements
 
