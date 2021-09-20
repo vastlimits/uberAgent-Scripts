@@ -1,0 +1,11 @@
+<nav> 
+
+   <collection label="Browser Extensions">
+      <view name="browser_extensions" default="true" />
+   </collection>
+
+   <collection label="Support">
+      <a href="https://uberagent.com/documentation/">Documentation</a>
+      <a href="https://support.uberagent.com/hc">Help Center</a>
+   </collection>
+</nav>

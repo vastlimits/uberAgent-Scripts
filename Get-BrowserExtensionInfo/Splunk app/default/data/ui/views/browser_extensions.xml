@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form version="1.1" script="main.js" stylesheet="uberAgent:main.css">
+
+   <label>Browser Extension Inventory</label>
+   <description>This dashboard visualizes extension inventory data collected by uberAgent.</description>
+ 
+   <fieldset autoRun="true" submitButton="true">
+      <input type="time" searchWhenChanged="true">
+         <label>Time range:</label>
+         <default>
+            <earliest>-1d</earliest>
+            <latest>now</latest>
+         </default>
+         <change>
+            <eval token="TimeRangePickerSpan">relative_time(now(), latest) - relative_time(now(), earliest)</eval>
+            <eval token="PivotPeriodAutoSolo">case('TimeRangePickerSpan' &lt; 350000, "auto", 'TimeRangePickerSpan' &lt; 610000, "hour", 1=1, "auto")</eval>
+            <eval token="PivotPeriodAutoTimechart">case('TimeRangePickerSpan' &lt; 1200, "second", 'TimeRangePickerSpan' &lt; 300000, "minute", 'TimeRangePickerSpan' &lt; 700000, "hour", 1=1, "day")</eval>
+         </change>
+      </input>
+   </fieldset>
+  
+   <search id="Search_Single1">
+      <query>
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+         | stats
+            dc(host) as HostCount
+            dc(OsUser) as OsUserCount
+            dc(ExtensionId) as ExtensionCount
+      </query>
+   </search>
+   
+   <search id="Search_Single2">
+      <query>
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Chrome
+         | stats
+            dc(ExtensionId) as ExtensionCount
+   </query>
+   </search>
+   
+   <search id="Search_Single3">
+      <query>
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Edge
+         | stats
+            dc(ExtensionId) as ExtensionCount
+   </query>
+   </search>
+   
+   <search id="Search_Single4">
+      <query>
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+         | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+         | stats
+            dc(HostUserBrowserProfile) as ExtensionCount
+   </query>
+   </search>
+   
+   <!-- Overview -->
+   <row>
+      <panel>
+         <title>Overview</title>
+         <html>
+            <div class="uA-Row">
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "HostCount",
+                     "managerid": "Search_Single1",
+                     "title": "#Hosts:",
+                     "afterLabel": "" }'>
+               </div>
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "OsUserCount",
+                     "managerid": "Search_Single1",
+                     "title": "#Users:",
+                     "afterLabel": "" }'>
+               </div>
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "ExtensionCount",
+                     "managerid": "Search_Single1",
+                     "title": "#Distinct extensions:",
+                     "afterLabel": "" }'>
+               </div>
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "ExtensionCount",
+                     "managerid": "Search_Single2",
+                     "title": "#Distinct Chrome extensions:",
+                     "afterLabel": "" }'>
+               </div>
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "ExtensionCount",
+                     "managerid": "Search_Single3",
+                     "title": "#Distinct Edge extensions:",
+                     "afterLabel": "" }'>
+               </div>
+               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
+                     data-options='{
+                     "field": "ExtensionCount",
+                     "managerid": "Search_Single4",
+                     "title": "#Total extensions:",
+                     "afterLabel": "" }'>
+               </div>
+            </div>
+         </html>
+      </panel>
+   </row>
+
+   <!-- Timechart -->
+   <row>
+      <panel>
+         <title>Top 10 extensions over time</title>
+         <chart>
+            <search>
+               <query>
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | timechart useother=false
+                     dc(HostUserBrowserProfile) as ExtensionInstanceCount
+                     by ExtensionName
+               </query>
+            </search>
+            <option name="height">200</option>
+            <option name="charting.chart">column</option>
+            <option name="charting.chart.stackMode">stacked</option>
+            <option name="charting.legend.placement">right</option>
+            <option name="charting.axisTitleX.visibility">collapsed</option>
+            <option name="charting.axisTitleY.text">Instance count</option>
+         </chart>
+      </panel>
+   </row>
+
+   <!-- Data table -->
+   <row>
+      <panel>
+         <title>Extensions grouped</title>
+         <input type="dropdown" token="Panel31ExtensionFilterTemp" searchWhenChanged="true">
+            <choice value="">All</choice>
+            <default></default>
+            <label>Extension name:</label>
+            <allowCustomValues>true</allowCustomValues>
+            <change>
+               <condition value="">
+                  <set token="Panel31ExtensionFilter"></set>
+                  <unset token="DrilldownFilterBy31"></unset>
+               </condition>
+               <condition value="*">
+                  <set token="Panel31ExtensionFilter">ExtensionName = $value|s$</set>
+                  <unset token="DrilldownFilterBy31"></unset>
+               </condition>
+            </change>
+         </input>
+         <table>
+            <title>All filtered extensions</title>
+            <search>
+               <query>
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $Panel31ExtensionFilter$
+                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval HostUserBrowserProfileEnabled = if (ExtensionState==1, HostUserBrowserProfile, null())
+                  | stats
+                     latest(ExtensionName) as Name
+                     dc(HostUserBrowserProfileEnabled) as "#Instances enabled"
+                     dc(HostUserBrowserProfile) as "#Instances total"
+                     dc(ExtensionVersion) as "#Versions"
+                     dc(OsUser) as "#Users"
+                     dc(host) as "#Hosts"
+                     by ExtensionId
+                  | eval sortfield = lower ('Name')
+                  | sort limit=0 sortfield
+                  | table
+                     "Name"
+                     "#Instances total"
+                     "#Instances enabled"
+                     "#Versions"
+                     "#Users"
+                     "#Hosts"
+               </query>
+            </search>
+            <option name="count">10</option>
+            <option name="drilldown">row</option>
+            <drilldown>
+                <set token="DrilldownFilterBy31">$click.value$</set>
+            </drilldown>
+         </table>
+      </panel>
+   </row>
+
+
+</form>

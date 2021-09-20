@@ -1,0 +1,196 @@
+/*
+   This file is loaded for every dashboard.
+*/
+
+/*******************************************
+   Input boxes
+*******************************************/
+
+/* Less room below input boxes */
+.splunk-choice-input
+{
+   padding-bottom: 0px !important;
+}
+
+/* Reduce the size of the input boxes in the panels */
+/*.dashboard-panel .fieldset
+{
+   transform: scale(0.8);
+   transform-origin: left;
+   -ms-transform: scale(0.8);
+   -ms-transform-origin: left;
+   -moz-transform: scale(0.8);
+   -moz-transform-origin: left;
+   -webkit-transform: scale(0.8);
+   -webkit-transform-origin: left;
+}*/
+
+/* Reduce the minimum width of dropdown input boxes */
+.splunk-dropdown .select2-container
+{
+   min-width: 80px !important;
+}
+
+/* Reduce the width of the filter operator input box from 220px (default) */
+#Input_FilterOperator, #Input_FilterOperator2, #Input_FilterOperator3, #Input_FilterOperator4, #Input_FilterOperator5, #Input_FilterOperator6
+{
+   width: 105px;
+}
+
+/* Reduce the width of the function input boxes from 220px (default) 
+[id^="Input_Panel"][id$="Function1"], [id^="Input_Panel"][id$="Function2"]
+{
+   width: 140px;
+} */
+
+/* Splunk 7.1: the width of a dropdown's data-component child is set to 200px directly on the element (probably a bug) */
+[data-component="splunk-core:/splunkjs/mvc/components/Dropdown"], [data-component="splunk-core:/splunkjs/mvc/components/MultiDropdown"]
+{
+   width: 100% !important;
+}
+
+/* Set the width (wrong width in Splunk 6.2.4, 200px instead of 220px) */
+.input .select2-container
+{
+   width: 100% !important;
+}
+
+/* Input boxes in the fieldset are formatted as display:inline-block
+   Because of that we cannot add breaks after specific elements.
+   Add "float: left" to make that possible   */
+.fieldset .input, .fieldset .form-submit, .fieldset .hide-global-filters
+{
+   float: left;
+}
+
+/* Adding "float: left" to input boxes reduces the right margin of the time range picker by approx. 5px. Add those back (10px -> 15px) */
+.input-timerangepicker
+{
+   margin-right: 15px !important;
+}
+
+/* Filters > 1: start in a new line */
+#Input_FilterField2, #Input_FilterField3, #Input_FilterField4, #Input_FilterField5, #Input_FilterField6
+{
+   clear: both;
+}
+
+/* Position the add / remove filter links */
+#uAAddRemoveFilters
+{
+   clear: both;
+   float: left;
+   text-align: right;
+}
+
+/*******************************************
+   Definition lists
+*******************************************/
+
+/* Format the terms */
+dt
+{
+   font-weight: bold;
+}
+
+/* Format the definitions */
+dd
+{
+   margin-top: 2px;
+   margin-bottom: 6px;
+   margin-left: 0px;
+}
+
+/*******************************************
+   Hide/Unhide divs
+*******************************************/
+
+.hidden { display: none; }
+.unhidden { display: block; }
+
+/*******************************************
+   Specifics to server-side includes (SSI)
+*******************************************/
+
+/* Adjust margins */
+.PaddingSSI
+{
+   margin-bottom: 20px;
+}
+
+.ServerSideInclude h1
+{
+   clear: left;
+}
+
+/*******************************************
+   Rows
+*******************************************/
+
+.panel-element-row
+{
+   border-top: none !important;
+}
+
+/*******************************************
+   Our own dashboard elements
+*******************************************/
+
+/* Row */
+.uA-Row
+{
+   clear: both;
+   overflow: hidden;
+}
+
+/* All controls */
+.uA-Control
+{
+   float: left;
+   min-width: 20px;
+   margin-right: 70px;
+   margin-bottom: 10px;
+}
+
+/* The buttons in our own tokenlink control */
+.tokenlink-container a
+{
+   margin-left: 5px;
+   margin-bottom: 10px;
+}
+
+/*******************************************
+   HTML control
+*******************************************/
+
+.dashboard-row .dashboard-panel .panel-body.html
+{
+   padding: 10px 15px 0px;
+}
+
+.html h1
+{
+   font-size: 24px;
+   font-weight: 400;
+}
+
+.html h2
+{
+   font-size: 16px;
+   font-weight: 200;
+}
+
+.html h2.AboveSingle
+{
+   margin: 0px;
+}
+
+/*******************************************
+   Panels
+*******************************************/
+
+.dashboard-row .dashboard-panel h2.panel-title
+{
+   font-size: 20px;
+   font-weight: 200;
+}
