@@ -8,7 +8,7 @@
       <input type="time" searchWhenChanged="true">
          <label>Time range:</label>
          <default>
-            <earliest>-4d</earliest>
+            <earliest>-5d</earliest>
             <latest>now</latest>
          </default>
          <change>
@@ -72,9 +72,9 @@
    <search id="Search_Single4">
       <query>
          index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
-         | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+         | eval HostUserBrowserProfileExtension = host . OsUser . Browser . ProfileDir . ExtensionId
          | stats
-            dc(HostUserBrowserProfile) as ExtensionCount
+            dc(HostUserBrowserProfileExtension) as ExtensionCount
    </query>
    </search>
    
@@ -123,7 +123,7 @@
                      data-options='{
                      "field": "ExtensionCount",
                      "managerid": "Search_Single4",
-                     "title": "#Total extensions:",
+                     "title": "#Extension instances:",
                      "afterLabel": "" }'>
                </div>
             </div>
@@ -140,7 +140,7 @@
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
-                  | timechart `uberAgent_dynamic_span` useother=false
+                  | timechart span=1d useother=false
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                      by ExtensionName
                </query>
@@ -168,11 +168,13 @@
             <change>
                <condition value="">
                   <set token="Panel31ExtensionFilter"></set>
-                  <unset token="DrilldownFilterBy31"></unset>
+                  <unset token="DrilldownFilterBy31ExtensionId"></unset>
+                  <unset token="DrilldownFilterBy31DisplayName"></unset>
                </condition>
                <condition value="*">
                   <set token="Panel31ExtensionFilter">ExtensionName = $value|s$</set>
-                  <unset token="DrilldownFilterBy31"></unset>
+                  <unset token="DrilldownFilterBy31ExtensionId"></unset>
+                  <unset token="DrilldownFilterBy31DisplayName"></unset>
                </condition>
             </change>
          </input>
@@ -190,37 +192,36 @@
                      dc(ExtensionVersion) as "#Versions"
                      dc(OsUser) as "#Users"
                      dc(host) as "#Hosts"
+                     values(Browser) as Browsers
                      by ExtensionId
+                  | eval "Browser(s)" = mvjoin(Browsers, ", ")
                   | eval sortfield = lower ('Name')
                   | sort limit=0 sortfield
                   | table
-                     "Name"
-                     "#Instances total"
-                     "#Instances enabled"
-                     "#Versions"
-                     "#Users"
-                     "#Hosts"
+                     "Name" "Browser(s)" "#Instances total" "#Instances enabled" "#Versions" "#Users" "#Hosts" ExtensionId
                </query>
             </search>
+            <fields>["Name", "Browser(s)", "#Instances total", "#Instances enabled", "#Versions", "#Users", "#Hosts"]</fields>
             <option name="count">10</option>
             <option name="drilldown">row</option>
             <drilldown>
-                <set token="DrilldownFilterBy31">$click.value$</set>
+                <set token="DrilldownFilterBy31ExtensionId">$row.ExtensionId|s$</set>
+                <set token="DrilldownFilterBy31DisplayName">$row.Name|s$</set>
             </drilldown>
          </table>
       </panel>
    </row>
 
    <!--- In-page drilldown -->
-   <row depends="$DrilldownFilterBy31$">
+   <row depends="$DrilldownFilterBy31ExtensionId$">
       <panel>
          <chart>
-            <title>$DrilldownFilterBy31$: instance count over time</title>
+            <title>$DrilldownFilterBy31DisplayName$: instance count over time</title>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$ $UserFilter$ $HostFilter$
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
-                  | timechart `uberAgent_dynamic_span`
+                  | timechart span=1d
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                </query>
             </search>
@@ -235,13 +236,13 @@
          </chart>
       </panel>
    </row>
-   <row depends="$DrilldownFilterBy31$">
+   <row depends="$DrilldownFilterBy31ExtensionId$">
       <panel>
          <table>
-            <title>$DrilldownFilterBy31$: instance details</title>
+            <title>$DrilldownFilterBy31DisplayName$: instance details</title>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$ $UserFilter$ $HostFilter$
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
                   | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
                   | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")

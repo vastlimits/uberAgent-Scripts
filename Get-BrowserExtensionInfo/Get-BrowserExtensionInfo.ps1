@@ -125,6 +125,28 @@ function GetUsername
 }
 
 #
+# Get extension JSON settings from a profile's (secure) preferences
+#
+function GetExtensionJsonFromPreferences
+{
+   Param(
+      [Parameter(Mandatory)][string] $preferencesFile
+   )
+
+   # Check if the secure preferences file exists
+   if (-not (Test-Path $preferencesFile -PathType Leaf))
+   {
+      return
+   }
+
+   # Read the secure preferences file & convert to JSON
+   $preferencesJson = Get-Content $preferencesFile | ConvertFrom-Json
+
+   # The extensions are children of extensions > settings
+   return $preferencesJson.extensions.settings
+}
+
+#
 # Get extension information from a profile
 #
 function GetExtensionInfoFromProfile
@@ -136,20 +158,19 @@ function GetExtensionInfoFromProfile
    # Out variable
    $extensionsMap = @{}
 
-   # Build the path to the secure preferences file
-   $securePreferencesPath = $profilePath + "\Secure Preferences"
-
-   # Check if the secure preferences file exists
-   if (-not (Test-Path $securePreferencesPath -PathType Leaf))
+   # Try to get extension info from secure preferences
+   $extensionsJson = GetExtensionJsonFromPreferences ($profilePath + "\Secure Preferences")
+   if ($extensionsJson -eq $null)
    {
-      return $extensionsMap
+      # Try regular preferences instead
+      $extensionsJson = GetExtensionJsonFromPreferences ($profilePath + "\Preferences")
+      if ($extensionsJson -eq $null)
+      {
+         return $extensionsMap
+      }
    }
 
-   # Read the secure preferences file & convert to JSON
-   $securePreferencesJson = Get-Content $securePreferencesPath | ConvertFrom-Json
-
    # The extensions are children of extensions > settings
-   $extensionsJson = $securePreferencesJson.extensions.settings
    $extensionIds   = $extensionsJson.psobject.properties.name
 
    # Extract properties of each extension
