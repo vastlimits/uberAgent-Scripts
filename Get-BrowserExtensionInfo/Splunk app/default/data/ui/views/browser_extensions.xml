@@ -159,7 +159,7 @@
    <!-- Data table -->
    <row>
       <panel>
-         <title>Extensions grouped</title>
+         <title>Extensions (grouped by ID)</title>
          <input type="dropdown" token="Panel31ExtensionFilterTemp" searchWhenChanged="true">
             <choice value="">All</choice>
             <default></default>
@@ -179,7 +179,6 @@
             </change>
          </input>
          <table>
-            <title>All filtered extensions</title>
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $Panel31ExtensionFilter$ $UserFilter$ $HostFilter$
@@ -205,8 +204,8 @@
             <option name="count">10</option>
             <option name="drilldown">row</option>
             <drilldown>
-                <set token="DrilldownFilterBy31ExtensionId">$row.ExtensionId|s$</set>
-                <set token="DrilldownFilterBy31DisplayName">$row.Name|s$</set>
+                <set token="DrilldownFilterBy31ExtensionId">$row.ExtensionId$</set>
+                <set token="DrilldownFilterBy31DisplayName">$row.Name$</set>
             </drilldown>
          </table>
       </panel>
@@ -216,7 +215,7 @@
    <row depends="$DrilldownFilterBy31ExtensionId$">
       <panel>
          <chart>
-            <title>$DrilldownFilterBy31DisplayName$: instance count over time</title>
+            <title>$DrilldownFilterBy31DisplayName$ ($DrilldownFilterBy31ExtensionId$): instance count over time</title>
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
@@ -239,7 +238,7 @@
    <row depends="$DrilldownFilterBy31ExtensionId$">
       <panel>
          <table>
-            <title>$DrilldownFilterBy31DisplayName$: instance details</title>
+            <title>$DrilldownFilterBy31DisplayName$ ($DrilldownFilterBy31ExtensionId$): instance details</title>
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
