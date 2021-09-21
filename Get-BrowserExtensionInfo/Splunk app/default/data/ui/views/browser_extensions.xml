@@ -127,6 +127,7 @@
             <option name="charting.legend.placement">right</option>
             <option name="charting.axisTitleX.visibility">collapsed</option>
             <option name="charting.axisTitleY.text">Instance count</option>
+            <option name="charting.drilldown">none</option>
          </chart>
       </panel>
    </row>
@@ -186,5 +187,75 @@
       </panel>
    </row>
 
+   <!--- In-page drilldown -->
+   <row depends="$DrilldownFilterBy31$">
+      <panel>
+         <chart>
+            <title>$DrilldownFilterBy31$: instance count over time</title>
+            <search>
+               <query>
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$
+                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | timechart
+                     dc(HostUserBrowserProfile) as ExtensionInstanceCount
+               </query>
+            </search>
+            <option name="height">250</option>
+            <option name="charting.chart">line</option>
+            <option name="charting.legend.placement">none</option>
+            <option name="charting.axisY.includeZero">true</option>
+            <option name="charting.axisTitleX.visibility">collapsed</option>
+            <option name="charting.axisTitleY.text">Instance count</option>
+            <option name="charting.chart.nullValueMode">zero</option>
+            <option name="charting.drilldown">none</option>
+         </chart>
+      </panel>
+   </row>
+   <row depends="$DrilldownFilterBy31$">
+      <panel>
+         <table>
+            <title>$DrilldownFilterBy31$: instance details</title>
+            <search>
+               <query>
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$
+                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
+                  | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")
+                  | eval InstalledByDefault = if (ExtensionInstalledByDefault == "True", "yes", "no")
+                  | eval InstallTime = strftime (ExtensionInstallTime/1000, "%Y-%m-%d %H:%M:%S")
+                  | stats
+                     latest(host) as Host
+                     latest(ExtensionVersion) as "Ext. version"
+                     latest(ExtensionEnabled) as "Enabled?"
+                     latest(FromWebstore) as "From Web Store?"
+                     latest(InstalledByDefault) as "Installed by default?"
+                     latest(OsUser) as "OS user"
+                     latest(Browser) as Browser
+                     latest(ProfileDir) as "Profile"
+                     latest(ProfileGaiaName) as "Profile Google name"
+                     latest(ProfileUserName) as "Profile email"
+                     latest(InstallTime) as "Install time"
+                     by HostUserBrowserProfile
+                  | eval sortfield = lower ('Name')
+                  | sort limit=0 sortfield
+                  | table
+                     Host
+                     "OS user"
+                     Browser
+                     Profile
+                     "Profile Google name"
+                     "Profile email"
+                     "Ext. version"
+                     "Enabled?"
+                     "From Web Store?"
+                     "Installed by default?"
+                     "Install time"
+               </query>
+            </search>
+            <option name="count">10</option>
+            <option name="drilldown">none</option>
+         </table>
+      </panel>
+   </row>
 
 </form>
