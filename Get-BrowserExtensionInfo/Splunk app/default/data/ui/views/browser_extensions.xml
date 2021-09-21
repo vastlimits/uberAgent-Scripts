@@ -4,11 +4,11 @@
    <label>Browser Extension Inventory</label>
    <description>This dashboard visualizes extension inventory data collected by uberAgent.</description>
  
-   <fieldset autoRun="true" submitButton="true">
+   <fieldset autoRun="true" submitButton="false">
       <input type="time" searchWhenChanged="true">
          <label>Time range:</label>
          <default>
-            <earliest>-1d</earliest>
+            <earliest>-4d</earliest>
             <latest>now</latest>
          </default>
          <change>
@@ -17,11 +17,35 @@
             <eval token="PivotPeriodAutoTimechart">case('TimeRangePickerSpan' &lt; 1200, "second", 'TimeRangePickerSpan' &lt; 300000, "minute", 'TimeRangePickerSpan' &lt; 700000, "hour", 1=1, "day")</eval>
          </change>
       </input>
+      <input type="text" token="HostFilterTemp">
+         <label>Host:</label>
+         <default></default>
+         <change>
+            <condition value="">
+               <set token="HostFilter"></set>
+            </condition>
+            <condition value="*">
+               <set token="HostFilter">host = $value|s$</set>
+            </condition>
+         </change>
+      </input>
+      <input type="text" token="UserFilterTemp">
+         <label>User:</label>
+         <default></default>
+         <change>
+            <condition value="">
+               <set token="UserFilter"></set>
+            </condition>
+            <condition value="*">
+               <set token="UserFilter">OsUser = $value|s$</set>
+            </condition>
+         </change>
+      </input>
    </fieldset>
   
    <search id="Search_Single1">
       <query>
-         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
          | stats
             dc(host) as HostCount
             dc(OsUser) as OsUserCount
@@ -31,7 +55,7 @@
    
    <search id="Search_Single2">
       <query>
-         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Chrome
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Chrome $UserFilter$ $HostFilter$
          | stats
             dc(ExtensionId) as ExtensionCount
    </query>
@@ -39,7 +63,7 @@
    
    <search id="Search_Single3">
       <query>
-         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Edge
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" Browser=Edge $UserFilter$ $HostFilter$
          | stats
             dc(ExtensionId) as ExtensionCount
    </query>
@@ -47,7 +71,7 @@
    
    <search id="Search_Single4">
       <query>
-         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
          | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
          | stats
             dc(HostUserBrowserProfile) as ExtensionCount
@@ -114,9 +138,9 @@
          <chart>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory"
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
-                  | timechart useother=false
+                  | timechart `uberAgent_dynamic_span` useother=false
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                      by ExtensionName
                </query>
@@ -156,7 +180,7 @@
             <title>All filtered extensions</title>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $Panel31ExtensionFilter$
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $Panel31ExtensionFilter$ $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
                   | eval HostUserBrowserProfileEnabled = if (ExtensionState==1, HostUserBrowserProfile, null())
                   | stats
@@ -194,9 +218,9 @@
             <title>$DrilldownFilterBy31$: instance count over time</title>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$ $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
-                  | timechart
+                  | timechart `uberAgent_dynamic_span`
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                </query>
             </search>
@@ -217,7 +241,7 @@
             <title>$DrilldownFilterBy31$: instance details</title>
             <search>
                <query>
-                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$
+                  index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionName=$DrilldownFilterBy31|s$ $UserFilter$ $HostFilter$
                   | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
                   | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
                   | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")
