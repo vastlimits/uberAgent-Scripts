@@ -1,6 +1,6 @@
 # Get-BrowserExtensionInfo: Collect Information About the Installed Browser Extensions
 
-This script is part of the uberAgent practice guide [NAME](URL).
+This script is part of the uberAgent practice guide [Building a Browser Extension Inventory Report](https://uberagent.com/docs/uberagent/latest/practice-guides/building-a-browser-extension-inventory-report/).
 
 ## Description
 
