@@ -13,6 +13,7 @@ enum Browser
 {
    Chrome
    Edge
+   Firefox
 }
 
 #
@@ -24,32 +25,62 @@ function ProcessBrowser
       [Parameter(Mandatory)][Browser] $browser
    )
    
-   # Get the user data directory. If it doesn't exist, we cannot proceed.
-   $userDataPath = GetUserDataPath $browser
-   if ($userDataPath -eq $null)
+   if ($browser -eq [Browser]::Chrome -or $browser -eq [Browser]::Edge)
    {
-      return
-   }
+      # Chromium-based browsers
 
-   # Get info on the profiles
-   $profiles = GetChromeProfiles $userDataPath
-
-   # Iterate over the profiles to get info on the extensions
-   foreach ($profileDir in $profiles.keys)
-   {
-      $profilePath = $userDataPath + "\" + $profileDir
-
-      # Check if the user profile directory exists
-      if (-not (Test-Path $profilePath))
+      # Get the user data directory. If it doesn't exist, we cannot proceed.
+      $userDataPath = GetChromiumUserDataPath $browser
+      if ($userDataPath -eq $null)
       {
-         continue
+         return
       }
 
-      # Get extension info...
-      $extensionInfo = GetExtensionInfoFromProfile $profilePath
+      # Get user info about the profiles
+      $profiles = GetProfilesChromium $userDataPath
 
-      # ...and write it to stdout
-      PrintExtensionInfo "$browser" $profileDir $profiles $extensionInfo
+      # Iterate over the profiles to get info on the extensions
+      foreach ($profileDir in $profiles.keys)
+      {
+         $profilePath = $userDataPath + "\" + $profileDir
+
+         # Check if the user profile directory exists
+         if (-not (Test-Path $profilePath))
+         {
+            continue
+         }
+
+         # Get extension info...
+         $extensionInfo = GetExtensionInfoFromProfileChromium $profilePath
+
+         # ...and write it to stdout
+         PrintExtensionInfo "$browser" $profileDir $profiles $extensionInfo
+      }
+   }
+   elseif ($browser -eq [Browser]::Firefox)
+   {
+      # Firefox
+
+      # Get the profiles' parent directory
+      $profilesPath = GetFirefoxProfilesPath
+
+      # Process each profile
+      foreach ($profileDirObject in Get-ChildItem -Path $profilesPath -Directory)
+      {
+         # Get user info
+         $profiles = GetProfileUserInfoFirefox $profileDirObject.Name $profileDirObject.FullName
+
+         # Get extension info...
+         $extensionInfo = GetExtensionInfoFromProfileFirefox $profileDirObject.FullName
+
+         # ...and write it to stdout
+         PrintExtensionInfo "$browser" $profileDirObject.Name $profiles $extensionInfo
+      }
+   }
+   else
+   {
+      Write-Error "Invalid browser: $browser"
+      return
    }
 }
 
@@ -125,9 +156,9 @@ function GetUsername
 }
 
 #
-# Get extension JSON settings from a profile's (secure) preferences
+# Get extension JSON settings from a Chromium profile's (secure) preferences
 #
-function GetExtensionJsonFromPreferences
+function GetExtensionJsonFromPreferencesChromium
 {
    Param(
       [Parameter(Mandatory)][string] $preferencesFile
@@ -139,7 +170,7 @@ function GetExtensionJsonFromPreferences
       return
    }
 
-   # Read the secure preferences file & convert to JSON
+   # Read the preferences file & convert to JSON
    $preferencesJson = Get-Content -Path $preferencesFile -Encoding UTF8 | ConvertFrom-Json
 
    # The extensions are children of extensions > settings
@@ -147,9 +178,31 @@ function GetExtensionJsonFromPreferences
 }
 
 #
-# Get extension information from a profile
+# Get extension JSON settings from a Firefox profile's preferences
 #
-function GetExtensionInfoFromProfile
+function GetExtensionJsonFromPreferencesFirefox
+{
+   Param(
+      [Parameter(Mandatory)][string] $preferencesFile
+   )
+
+   # Check if the secure preferences file exists
+   if (-not (Test-Path $preferencesFile -PathType Leaf))
+   {
+      return
+   }
+
+   # Read the preferences file & convert to JSON
+   $preferencesJson = Get-Content -Path $preferencesFile -Encoding UTF8 | ConvertFrom-Json
+
+   # The extensions are children of extensions > settings
+   return $preferencesJson.addons
+}
+
+#
+# Get extension information from a Chromium-based profile
+#
+function GetExtensionInfoFromProfileChromium
 {
    Param(
       [Parameter(Mandatory)][string] $profilePath
@@ -159,11 +212,11 @@ function GetExtensionInfoFromProfile
    $extensionsMap = @{}
 
    # Try to get extension info from secure preferences
-   $extensionsJson = GetExtensionJsonFromPreferences ($profilePath + "\Secure Preferences")
+   $extensionsJson = GetExtensionJsonFromPreferencesChromium ($profilePath + "\Secure Preferences")
    if ($extensionsJson -eq $null)
    {
       # Try regular preferences instead
-      $extensionsJson = GetExtensionJsonFromPreferences ($profilePath + "\Preferences")
+      $extensionsJson = GetExtensionJsonFromPreferencesChromium ($profilePath + "\Preferences")
       if ($extensionsJson -eq $null)
       {
          return $extensionsMap
@@ -201,8 +254,8 @@ function GetExtensionInfoFromProfile
          continue
       }
 
-      # Install time
-      $installTimeMs = ConvertChromeTimestampToEpochMs $extensionsJson.$extensionId.install_time
+      # Last install time
+      $updateTimeMs = ConvertChromeTimestampToEpochMs $extensionsJson.$extensionId.install_time
 
       # Manifest
       $manifestJson = $extensionsJson.$extensionId.manifest
@@ -222,11 +275,86 @@ function GetExtensionInfoFromProfile
          fromWebstore         = $extensionsJson.$extensionId.from_webstore             # Was the extension installed from the Chrome Web Store?
          installedByDefault   = $extensionsJson.$extensionId.was_installed_by_default  # Was the extension installed by default?
          state                = $extensionsJson.$extensionId.state                     # Extension state (1 = enabled)
-         installTime          = $installTimeMs                                         # Installation timestamp as Unix epoch in ms
+         installTime          = $updateTimeMs                                          # Timestamp of the last installation (= update) as Unix epoch in ms
       }
 
       # Add this extension to the list of extensions
       $extensionsMap[$extensionId] = $extensionMap;
+   }
+
+   # Return the list of extensions
+   return $extensionsMap
+}
+
+#
+# Get extension information from a Firefox profile
+#
+function GetExtensionInfoFromProfileFirefox
+{
+   Param(
+      [Parameter(Mandatory)][string] $profilePath
+   )
+
+   # Out variable
+   $extensionsMap = @{}
+
+   # Try to get extension info from extensions.json
+   $extensionsJson = GetExtensionJsonFromPreferencesFirefox ($profilePath + "\extensions.json")
+   if ($extensionsJson -eq $null)
+   {
+      return $extensionsMap
+   }
+
+   # Extract properties of each extension
+   foreach ($extensionJson in $extensionsJson)
+   {
+      # Ignore addons outside the profile
+      if ($extensionJson.location -ne "app-profile")
+      {
+         continue
+      }
+      # Ignore addons that are not extensions
+      if ($extensionJson.type -ne "extension")
+      {
+         continue
+      }
+
+      # State (enabled/disabled)
+      $state = "0"
+      if ($extensionJson.active -eq $true)
+      {
+         $state = "1"
+      }
+
+      # Default locale
+      $defaultLocale = $extensionJson.defaultLocale
+      if ($defaultLocale -eq $null)
+      {
+         # Ignore entries without a manifest
+         continue
+      }
+      $name = $defaultLocale.name
+
+      # Installation source: Firefox Addons?
+      # sourceURI must be https://addons.cdn.mozilla.net or https://addons.mozilla.org
+      $fromFirefoxAddons = $false
+      if ($extensionJson.sourceURI -match "^http(s)?://addons\.(cdn\.)?mozilla\.")
+      {
+         $fromFirefoxAddons = $true
+      }
+
+      # Build a hashtable with the properties of this extension
+      $extensionMap  =
+      @{
+         name                 = $name                       # Extension name
+         version              = $extensionJson.version      # Extension version
+         fromWebstore         = $fromFirefoxAddons          # Was the extension installed from Firefox Addons?
+         state                = $state                      # Extension state (1 = enabled)
+         installTime          = $extensionJson.updateDate   # Last update timestamp as Unix epoch in ms
+      }
+
+      # Add this extension to the list of extensions
+      $extensionsMap[$extensionJson.id] = $extensionMap;
    }
 
    # Return the list of extensions
@@ -255,9 +383,9 @@ function ConvertChromeTimestampToEpochMs
 }
 
 #
-# Get the Chrome profiles
+# Chrome: get the profiles (along with user info)
 #
-function GetChromeProfiles
+function GetProfilesChromium
 {
    Param(
       [Parameter(Mandatory)][string] $userDataPath
@@ -302,9 +430,61 @@ function GetChromeProfiles
 }
 
 #
+# Firefox: get user info for a profile
+#
+function GetProfileUserInfoFirefox
+{
+   Param(
+      [Parameter(Mandatory)][string] $profileDir,
+      [Parameter(Mandatory)][string] $profilePath
+   )
+
+   # Out variables
+   $userEmail = ""
+   $profilesMap = @{}
+
+   # Extract the profile name from the profile directory (everything after the first dot)
+   $profileName = ""
+   if ($profileDir -match "[^\.]+\.(.+)")
+   {
+      $profileName = $Matches[1]
+   }
+
+   # Build the path to the file signedInUser.json
+   $signedInUserPath = $profilePath + "\signedInUser.json"
+
+   # Check if the signedInUser.json file exists
+   if (Test-Path $signedInUserPath -PathType Leaf)
+   {
+      # Read the signedInUser.json file & convert to JSON
+      $signedInUserJson = Get-Content -Path $signedInUserPath -Encoding UTF8 | ConvertFrom-Json
+
+      # User Info is in accountData
+      $accountData = $signedInUserJson.accountData
+      if ($accountData -ne $null)
+      {
+         $userEmail = $accountData.email
+      }
+   }
+
+   # Build a hashtable with the properties of this profile
+   $profileMap  =
+   @{
+      userName    = $userEmail         # Email of the profile's user, e.g.: john@domain.com
+      profileName = $profileName       # Name of the browser profile, e.g.: Person 1
+   }
+
+   # Add this profile to the list of profiles
+   $profilesMap[$profileDir] = $profileMap;
+
+   # Return the list of profiles
+   return $profilesMap
+}
+
+#
 # Get the Chrome user data directory
 #
-function GetUserDataPath
+function GetChromiumUserDataPath
 {
    Param(
       [Parameter(Mandatory)][Browser] $browser
@@ -339,7 +519,29 @@ function GetUserDataPath
 }
 
 #
+# Get the Firefox profiles directory
+#
+function GetFirefoxProfilesPath
+{
+   $profilesPath = ""
+   
+   # Build the path to the profiles directory
+   $profilesPath = $env:APPDATA + "\Mozilla\Firefox\Profiles"
+
+   # Check if the profiles directory exists
+   if (Test-Path $profilesPath)
+   {
+      return $profilesPath
+   }
+   else
+   {
+      return
+   }
+}
+
+#
 # Script start
 #
 ProcessBrowser Chrome
 ProcessBrowser Edge
+ProcessBrowser Firefox

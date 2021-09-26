@@ -28,6 +28,7 @@ The subdirectory `Splunk app` contains a Splunk app that visualizes the data col
 
 - Google Chrome
 - Microsoft Edge
+- Mozilla Firefox
 
 ### Requirements
 
