@@ -140,7 +140,7 @@ function GetExtensionJsonFromPreferences
    }
 
    # Read the secure preferences file & convert to JSON
-   $preferencesJson = Get-Content $preferencesFile | ConvertFrom-Json
+   $preferencesJson = Get-Content -Path $preferencesFile -Encoding UTF8 | ConvertFrom-Json
 
    # The extensions are children of extensions > settings
    return $preferencesJson.extensions.settings
@@ -276,7 +276,7 @@ function GetChromeProfiles
    }
 
    # Read the local state file & convert to JSON
-   $localStateJson = Get-Content $localStatePath | ConvertFrom-Json
+   $localStateJson = Get-Content -Path $localStatePath -Encoding UTF8 | ConvertFrom-Json
 
    # The profiles are children of profile > info_cache
    $infoCacheJson = $localStateJson.profile.info_cache
