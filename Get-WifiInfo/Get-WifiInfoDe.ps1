@@ -1,4 +1,4 @@
-<#
+﻿<#
   .SYNOPSIS
   uberAgent script to collect information about signal quality and security of WiFi networks (DE).
 
