@@ -39,7 +39,7 @@ No specific requirements.
 ### 1.0.2
 
 - Added `sc_admin` permissions to meet Splunk Cloud requirements
-- Add package id in `app.conf` to meet Splunk Cloud requirements
+- Added package id in `app.conf` to meet Splunk Cloud requirements
 
 ### 1.0.1
 
