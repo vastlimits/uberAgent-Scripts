@@ -33,3 +33,18 @@ The subdirectory `Splunk app` contains a Splunk app that visualizes the data col
 ### Requirements
 
 No specific requirements.
+
+## Release Notes
+
+### 1.0.2
+
+- Added `sc_admin` permissions to meet Splunk Cloud requirements
+- Add package id in `app.conf` to meet Splunk Cloud requirements
+
+### 1.0.1
+
+- Added support for Firefox
+
+### 1.0.0
+
+- Initial release
