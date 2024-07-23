@@ -6,7 +6,7 @@ Machine Creation Services (MCS) Storage Optimization (MCSIO) is a great feature 
 
 The folder contains a script and a corresponding Splunk dashboard.
 
-## How to Run `Analyze_Drive`
+## How to Run `Analyze_Drive.ps1`
 
 ### Script Execution
 
@@ -22,7 +22,8 @@ The folder contains a script and a corresponding Splunk dashboard.
 
 ### Requirements
 
-No specific requirements.
+- uberAgent >= 7.0
+- CVAD >= 1903
 
 ## How to Import `Dashboard.json`
 
