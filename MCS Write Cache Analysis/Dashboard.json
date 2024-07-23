@@ -1,0 +1,387 @@
+{
+   "visualizations": {
+      "viz_0BqmCCpp": {
+         "type": "splunk.line",
+         "options": {
+            "y": "> primary | frameBySeriesNames('median used space (%)')",
+            "y2": "> primary | frameBySeriesNames('')",
+            "nullValueDisplay": "connect"
+         },
+         "dataSources": {
+            "primary": "ds_NodSNGkg"
+         },
+         "showProgressBar": false,
+         "showLastUpdated": false,
+         "title": "Used space over time (%)",
+         "description": "$function1$ used space on $drive$ over time"
+      },
+      "viz_hEfJLLMq": {
+         "type": "splunk.line",
+         "dataSources": {
+            "primary": "ds_yaIknCRq"
+         },
+         "title": "Pagefile usage (GB)",
+         "options": {
+            "seriesColors": [
+               "#00CDAF",
+               "#7B56DB",
+               "#009CEB",
+               "#DD9900",
+               "#FF677B",
+               "#CB2196",
+               "#813193",
+               "#0051B5",
+               "#008C80",
+               "#99B100",
+               "#FFA476",
+               "#FF6ACE",
+               "#AE8CFF",
+               "#00689D",
+               "#00490A",
+               "#465D00",
+               "#9D6300",
+               "#F6540B",
+               "#FF969E",
+               "#E47BFE"
+            ]
+         },
+         "description": "Pagefile location is transparent to uberAgent, hence the selected drive does not influence this chart"
+      },
+      "viz_Thseh0Nq": {
+         "type": "splunk.table",
+         "dataSources": {
+            "primary": "ds_Fm9dqOup"
+         },
+         "title": "Files and folders (MB)",
+         "description": "The size of files and folders in the root of $drive$",
+         "options": {
+            "font": "monospace",
+            "count": 25
+         }
+      },
+      "viz_T7avEykm": {
+         "type": "splunk.singlevalue",
+         "title": "Capacity",
+         "dataSources": {
+            "primary": "ds_mshsBm67"
+         },
+         "options": {
+            "unit": "GB",
+            "numberPrecision": 1,
+            "trendDisplay": "off"
+         },
+         "description": "$function1$ capacity on $drive$"
+      },
+      "viz_S0oQjKZH": {
+         "type": "splunk.singlevalue",
+         "title": "Used space",
+         "dataSources": {
+            "primary": "ds_ocWC8Jj1"
+         },
+         "showProgressBar": false,
+         "showLastUpdated": false,
+         "options": {
+            "unit": "GB",
+            "numberPrecision": 1
+         },
+         "description": "$function1$ used space on $drive$"
+      },
+      "viz_V2yHjIO5": {
+         "type": "splunk.line",
+         "dataSources": {
+            "primary": "ds_ZoWKoyH3"
+         },
+         "title": "mcsdif.vhdx Size (GB)",
+         "description": "mcsdif.vhdx location is transparent to uberAgent, hence the selected drive does not influence this chart",
+         "options": {
+            "seriesColors": [
+               "#DD9900",
+               "#7B56DB",
+               "#009CEB",
+               "#00CDAF",
+               "#FF677B",
+               "#CB2196",
+               "#813193",
+               "#0051B5",
+               "#008C80",
+               "#99B100",
+               "#FFA476",
+               "#FF6ACE",
+               "#AE8CFF",
+               "#00689D",
+               "#00490A",
+               "#465D00",
+               "#9D6300",
+               "#F6540B",
+               "#FF969E",
+               "#E47BFE"
+            ]
+         }
+      },
+      "viz_rnrCMYmy": {
+         "type": "splunk.line",
+         "dataSources": {
+            "primary": "ds_fbsFieiD_ds_ZoWKoyH3"
+         },
+         "title": "RAM cache (GB)",
+         "description": "$function1$ RAM cache usage",
+         "options": {
+            "seriesColors": [
+               "#DD9900",
+               "#7B56DB",
+               "#009CEB",
+               "#00CDAF",
+               "#FF677B",
+               "#CB2196",
+               "#813193",
+               "#0051B5",
+               "#008C80",
+               "#99B100",
+               "#FFA476",
+               "#FF6ACE",
+               "#AE8CFF",
+               "#00689D",
+               "#00490A",
+               "#465D00",
+               "#9D6300",
+               "#F6540B",
+               "#FF969E",
+               "#E47BFE"
+            ]
+         }
+      }
+   },
+   "dataSources": {
+      "ds_NodSNGkg": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_VolumeInventory` System_VolumeInventory\n    $function1$(UsedSpacePercent) as \"$function1$ used space (%)\"\n    splitrow _time period auto\n    filter MountPoints is $drive$\n    filter host is $filter_host$\n    ```filter CtxMachineCatalogName in (\"*\")```\n| table _time \"$function1$ used space (%)\" "
+         },
+         "name": "Search_1"
+      },
+      "ds_yaIknCRq": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_SystemPerformanceSummary` System_SystemPerformanceSummary\n    $function1$(PagefileTotalSizeGB) as \"$function1$ size (GB)\"\n    ```filter CtxMachineCatalogName in (\"*\")```\n    filter host is $filter_host$\n    splitrow _time period auto\n    "
+         },
+         "name": "Search_2"
+      },
+      "ds_Fm9dqOup": {
+         "type": "ds.search",
+         "options": {
+            "query": "index = `uberAgent_index` sourcetype=uberAgent:Script:MCSWC host=\"$filter_host$\" | where like(Item, \"$drive$%\") | stats latest(SizeMB) as \"Size (MB)\" by Item | sort - \"Size (MB)\"",
+            "queryParameters": {
+               "earliest": "$global_time.earliest$",
+               "latest": "$global_time.latest$"
+            }
+         },
+         "name": "Search_3"
+      },
+      "ds_JkH5fmZ9_ds_NodSNGkg": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_VolumeInventory` System_VolumeInventory\n    $function1$(UsedSpacePercent) as \"$function1$ used space %\"\n    $function1$(FreeMB) as FreeMB\n    splitrow _time period day\n    filter FileSystem isNot RAW\n    filter MountPoints is $drive$\n    filter CapacityMB >= 250\n    ```filter CtxMachineCatalogName in (\"*\")```\n| eval \"$function1$ free space (GB)\" = round (FreeMB / 1024,1) \n| table _time \"$function1$ used space %\" \"$function1$ free space (GB)\""
+         },
+         "name": "Search_1 copy 1"
+      },
+      "ds_W12haZXi": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_VolumeInventory` System_VolumeInventory\n            count(System_VolumeInventory) as count\n            splitrow MountPoints"
+         },
+         "name": "Search_Drives"
+      },
+      "ds_ocWC8Jj1": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_VolumeInventory` System_VolumeInventory\n    $function1$(FreeMB) as latestFreeMB\n    $function1$(UsedSpacePercent) as latestUsedSpacePercent\n    $function1$(CapacityMB) as CapacityMB\n    filter MountPoints is $drive$\n    filter host is $filter_host$\n| eval \"Used space (GB)\" = round ((CapacityMB * latestUsedSpacePercent / 100) / 1024,1) \n| eval \"Capacity (GB)\" = round(CapacityMB / 1024,1) \n| table \"Used space (GB)\" \"Capacity (GB)\""
+         },
+         "name": "Search_4"
+      },
+      "ds_mshsBm67": {
+         "type": "ds.chain",
+         "options": {
+            "extend": "ds_ocWC8Jj1",
+            "query": "| fields \"Capacity (GB)\""
+         },
+         "name": "Search_5"
+      },
+      "ds_ZoWKoyH3": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_PerformanceCounter` System_PerformanceCounter\n    $function1$(PerformanceCounterValue) as PerformanceCounterValue\n    splitrow\n    PerformanceCounterInstance\n    splitrow\n    _time Period auto\n    filter host is $filter_host$\n    filter PerformanceCounterObject is \"Citrix MCS\"\n    filter PerformanceCounterName is \"File Bytes\"\n    filter PerformanceCounterInstance is \"_Total\" \n| eval \"$function1$ size (GB)\" = round(PerformanceCounterValue / 1024 / 1024 / 1024, 1)\n| table _time \"$function1$ size (GB)\""
+         },
+         "name": "Search_6"
+      },
+      "ds_fbsFieiD_ds_ZoWKoyH3": {
+         "type": "ds.search",
+         "options": {
+            "query": "| pivot `uA_DM_System_PerformanceCounter` System_PerformanceCounter\n    $function1$(PerformanceCounterValue) as PerformanceCounterValue\n    splitrow\n    PerformanceCounterInstance\n    splitrow\n    _time Period auto\n    filter host is $filter_host$\n    filter PerformanceCounterObject is \"Citrix MCS\"\n    filter PerformanceCounterName is \"RAM Cache Bytes\"\n    filter PerformanceCounterInstance is \"_Total\" \n| eval \"$function1$ size (GB)\" = round(PerformanceCounterValue / 1024 / 1024 / 1024, 1)\n| table _time \"$function1$ size (GB)\""
+         },
+         "name": "Search_6 copy 1"
+      }
+   },
+   "defaults": {
+      "dataSources": {
+         "ds.search": {
+            "options": {
+               "queryParameters": {
+                  "latest": "$global_time.latest$",
+                  "earliest": "$global_time.earliest$"
+               }
+            }
+         }
+      }
+   },
+   "inputs": {
+      "input_global_trp": {
+         "type": "input.timerange",
+         "options": {
+            "token": "global_time",
+            "defaultValue": "-7d@h,now"
+         },
+         "title": "Global Time Range"
+      },
+      "input_JzPX4pLV": {
+         "options": {
+            "items": [
+               {
+                  "label": "median",
+                  "value": "median"
+               },
+               {
+                  "label": "avg",
+                  "value": "avg"
+               },
+               {
+                  "label": "min",
+                  "value": "min"
+               },
+               {
+                  "label": "max",
+                  "value": "max"
+               }
+            ],
+            "token": "function1",
+            "selectFirstSearchResult": true
+         },
+         "title": "Function",
+         "type": "input.dropdown"
+      },
+      "input_okk03R0s": {
+         "options": {
+            "items": [
+               {
+                  "label": "D:\\",
+                  "value": "D:\\"
+               },
+               {
+                  "label": "E:\\",
+                  "value": "E:\\"
+               }
+            ],
+            "token": "drive",
+            "defaultValue": "D:\\"
+         },
+         "title": "Drive",
+         "type": "input.dropdown",
+         "dataSources": {},
+         "context": {}
+      },
+      "input_9ANnUXg8": {
+         "options": {
+            "defaultValue": "*",
+            "token": "filter_host"
+         },
+         "title": "Host",
+         "type": "input.text"
+      }
+   },
+   "layout": {
+      "type": "grid",
+      "options": {
+         "width": 1440,
+         "height": 960
+      },
+      "structure": [
+         {
+            "item": "viz_T7avEykm",
+            "type": "block",
+            "position": {
+               "x": 0,
+               "y": 0,
+               "w": 719,
+               "h": 144
+            }
+         },
+         {
+            "item": "viz_0BqmCCpp",
+            "type": "block",
+            "position": {
+               "x": 0,
+               "y": 144,
+               "w": 1442,
+               "h": 303
+            }
+         },
+         {
+            "item": "viz_V2yHjIO5",
+            "type": "block",
+            "position": {
+               "x": 0,
+               "y": 447,
+               "w": 721,
+               "h": 349
+            }
+         },
+         {
+            "item": "viz_hEfJLLMq",
+            "type": "block",
+            "position": {
+               "x": 0,
+               "y": 796,
+               "w": 1442,
+               "h": 348
+            }
+         },
+         {
+            "item": "viz_Thseh0Nq",
+            "type": "block",
+            "position": {
+               "x": 0,
+               "y": 1144,
+               "w": 1442,
+               "h": 367
+            }
+         },
+         {
+            "item": "viz_S0oQjKZH",
+            "type": "block",
+            "position": {
+               "x": 719,
+               "y": 0,
+               "w": 723,
+               "h": 144
+            }
+         },
+         {
+            "item": "viz_rnrCMYmy",
+            "type": "block",
+            "position": {
+               "x": 721,
+               "y": 447,
+               "w": 721,
+               "h": 349
+            }
+         }
+      ],
+      "globalInputs": [
+         "input_global_trp",
+         "input_JzPX4pLV",
+         "input_9ANnUXg8",
+         "input_okk03R0s"
+      ]
+   },
+   "description": "",
+   "title": "MCS Write Cache Analysis"
+}
