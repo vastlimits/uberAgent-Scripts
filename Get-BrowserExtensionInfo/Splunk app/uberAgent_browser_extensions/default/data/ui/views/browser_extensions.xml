@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<form version="1.1" script="main.js" stylesheet="uberAgent:main.css">
+<form version="1.1" stylesheet="uberAgent:main.css">
 
    <label>Browser Extension Inventory</label>
    <description>This dashboard visualizes extension inventory data collected by uberAgent.</description>
@@ -46,46 +46,24 @@
    <search id="Search_Single1">
       <query>
          index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
+         | eval HostUserBrowserProfileExtension = host . OsUser . Browser . ProfileDir . ExtensionId
          | stats
             dc(host) as HostCount
             dc(OsUser) as OsUserCount
             dc(ExtensionId) as ExtensionCount
+            dc(HostUserBrowserProfileExtension) as ExtensionInstances
       </query>
    </search>
-   
-   <search id="Search_Single2Base">
+
+   <search id="Search_Single2">
       <query>
          index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
          | stats
             dc(ExtensionId) as ExtensionCount
             by Browser
-      </query>
-   </search>
-
-   <search base="Search_Single2Base" id="Search_Single2Chrome">
-      <query>
-         where Browser = "Chrome"
-      </query>
-   </search>
-   
-   <search base="Search_Single2Base" id="Search_Single2Edge">
-      <query>
-         where Browser = "Edge"
-      </query>
-   </search>
-   
-   <search base="Search_Single2Base" id="Search_Single2Firefox">
-      <query>
-         where Browser = "Firefox"
-      </query>
-   </search>
-   
-   <search id="Search_Single3">
-      <query>
-         index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
-         | eval HostUserBrowserProfileExtension = host . OsUser . Browser . ProfileDir . ExtensionId
-         | stats
-            dc(HostUserBrowserProfileExtension) as ExtensionCount
+         | xyseries Browser Browser ExtensionCount
+         | fields - Browser
+         | stats values(*) as *
       </query>
    </search>
    
@@ -93,59 +71,33 @@
    <row>
       <panel>
          <title>Overview</title>
-         <html>
-            <div class="uA-Row">
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "HostCount",
-                     "managerid": "Search_Single1",
-                     "title": "#Hosts:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "OsUserCount",
-                     "managerid": "Search_Single1",
-                     "title": "#Users:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "ExtensionCount",
-                     "managerid": "Search_Single1",
-                     "title": "#Distinct extensions:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "ExtensionCount",
-                     "managerid": "Search_Single2Chrome",
-                     "title": "#Distinct Chrome extensions:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "ExtensionCount",
-                     "managerid": "Search_Single2Edge",
-                     "title": "#Distinct Edge extensions:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "ExtensionCount",
-                     "managerid": "Search_Single2Firefox",
-                     "title": "#Distinct Firefox extensions:",
-                     "afterLabel": "" }'>
-               </div>
-               <div  class="splunk-view" data-require="apppathUXM/components/uA-Single/uA-Single"
-                     data-options='{
-                     "field": "ExtensionCount",
-                     "managerid": "Search_Single3",
-                     "title": "#Extension instances:",
-                     "afterLabel": "" }'>
-               </div>
-            </div>
-         </html>
+         <viz type="uberAgent.uberagent-singlevalue">
+            <search base="Search_Single1" />
+            <option name="uberAgent.uberagent-singlevalue.1-field">HostCount</option>
+            <option name="uberAgent.uberagent-singlevalue.1-title">#Hosts:</option>
+            <option name="uberAgent.uberagent-singlevalue.1-afterLabel"></option>
+            <option name="uberAgent.uberagent-singlevalue.2-field">OsUserCount</option>
+            <option name="uberAgent.uberagent-singlevalue.2-title">#Users:</option>
+            <option name="uberAgent.uberagent-singlevalue.2-afterLabel"></option>
+            <option name="uberAgent.uberagent-singlevalue.3-field">ExtensionCount</option>
+            <option name="uberAgent.uberagent-singlevalue.3-title">#Distinct extensions:</option>
+            <option name="uberAgent.uberagent-singlevalue.3-afterLabel"></option>
+            <option name="uberAgent.uberagent-singlevalue.4-field">ExtensionInstances</option>
+            <option name="uberAgent.uberagent-singlevalue.4-title">#Extension instances:</option>
+            <option name="uberAgent.uberagent-singlevalue.4-afterLabel"></option>
+         </viz>
+         <viz type="uberAgent.uberagent-singlevalue">
+            <search base="Search_Single2" />
+            <option name="uberAgent.uberagent-singlevalue.1-field">Chrome</option>
+            <option name="uberAgent.uberagent-singlevalue.1-title">#Distinct Chrome extensions:</option>
+            <option name="uberAgent.uberagent-singlevalue.1-afterLabel"></option>
+            <option name="uberAgent.uberagent-singlevalue.2-field">Edge</option>
+            <option name="uberAgent.uberagent-singlevalue.2-title">#Distinct Edge extensions:</option>
+            <option name="uberAgent.uberagent-singlevalue.2-afterLabel"></option>
+            <option name="uberAgent.uberagent-singlevalue.3-field">Firefox</option>
+            <option name="uberAgent.uberagent-singlevalue.3-title">#Distinct Firefox extensions:</option>
+            <option name="uberAgent.uberagent-singlevalue.3-afterLabel"></option>
+         </viz>
       </panel>
    </row>
 
