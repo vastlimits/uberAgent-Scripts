@@ -31,7 +31,7 @@ function ProcessBrowser
 
       # Get the user data directory. If it doesn't exist, we cannot proceed.
       $userDataPath = GetChromiumUserDataPath $browser
-      if ($userDataPath -eq $null)
+      if ($null -eq $userDataPath)
       {
          return
       }
@@ -171,7 +171,15 @@ function GetExtensionJsonFromPreferencesChromium
    }
 
    # Read the preferences file & convert to JSON
-   $preferencesJson = Get-Content -Path $preferencesFile -Encoding UTF8 | ConvertFrom-Json
+   # Note:
+   #  We may get the error: "Cannot convert the JSON string because it contains keys with different casing. Please use the -AsHashTable switch instead.
+   #  The suggestion doesn't help because as a hash table the JSON's hierarchy is lost.
+   #  We ignore the error instead.
+   try {
+      $preferencesJson = Get-Content -Path $preferencesFile -Encoding UTF8 | ConvertFrom-Json
+   }
+   catch {
+   }
 
    # The extensions are children of extensions > settings
    return $preferencesJson.extensions.settings
@@ -213,11 +221,11 @@ function GetExtensionInfoFromProfileChromium
 
    # Try to get extension info from secure preferences
    $extensionsJson = GetExtensionJsonFromPreferencesChromium ($profilePath + "\Secure Preferences")
-   if ($extensionsJson -eq $null)
+   if ($null -eq $extensionsJson)
    {
       # Try regular preferences instead
       $extensionsJson = GetExtensionJsonFromPreferencesChromium ($profilePath + "\Preferences")
-      if ($extensionsJson -eq $null)
+      if ($null -eq $extensionsJson)
       {
          return $extensionsMap
       }
@@ -259,7 +267,7 @@ function GetExtensionInfoFromProfileChromium
 
       # Manifest
       $manifestJson = $extensionsJson.$extensionId.manifest
-      if ($manifestJson -eq $null)
+      if ($null -eq $manifestJson)
       {
          # Ignore entries without a manifest
          continue
@@ -300,7 +308,7 @@ function GetExtensionInfoFromProfileFirefox
 
    # Try to get extension info from extensions.json
    $extensionsJson = GetExtensionJsonFromPreferencesFirefox ($profilePath + "\extensions.json")
-   if ($extensionsJson -eq $null)
+   if ($null -eq $extensionsJson)
    {
       return $extensionsMap
    }
@@ -328,7 +336,7 @@ function GetExtensionInfoFromProfileFirefox
 
       # Default locale
       $defaultLocale = $extensionJson.defaultLocale
-      if ($defaultLocale -eq $null)
+      if ($null -eq $defaultLocale)
       {
          # Ignore entries without a manifest
          continue
@@ -461,7 +469,7 @@ function GetProfileUserInfoFirefox
 
       # User Info is in accountData
       $accountData = $signedInUserJson.accountData
-      if ($accountData -ne $null)
+      if ($null -ne $accountData)
       {
          $userEmail = $accountData.email
       }
