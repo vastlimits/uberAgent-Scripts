@@ -36,6 +36,10 @@ No specific requirements.
 
 ## Release Notes
 
+### 1.0.4
+
+-  Updated links in the navigation in the *Support* menu item.
+
 ### 1.0.3
 
 - Ported dashboard to new uberAgent single value visualization. This fixes the `A custom JavaScript error caused an issue loading your dashboard` error in Splunk.
