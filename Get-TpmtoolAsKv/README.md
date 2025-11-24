@@ -1,6 +1,6 @@
 # Get-TpmtoolAsKv: Collect TPM Status Information
 
-This script is part of the uberAgent practice guide [Creating a TPM Status Inventory Report](https://uberagent.com/docs/uberagent/latest/practice-guides/creating-a-tpm-status-inventory-report/).
+This script is part of the uberAgent practice guide [Creating a TPM Status Inventory Report](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/creating-a-tpm-status-inventory-report).
 
 ## Description
 

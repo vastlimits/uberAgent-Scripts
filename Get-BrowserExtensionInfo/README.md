@@ -1,6 +1,6 @@
 # Get-BrowserExtensionInfo: Collect Information About the Installed Browser Extensions
 
-This script is part of the uberAgent practice guide [Building a Browser Extension Inventory Report](https://uberagent.com/docs/uberagent/latest/practice-guides/building-a-browser-extension-inventory-report/).
+This script is part of the uberAgent practice guide [Building a Browser Extension Inventory Report](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/building-a-browser-extension-inventory-report-chrome-edge-firefox).
 
 ## Description
 
@@ -35,6 +35,10 @@ The subdirectory `Splunk app` contains a Splunk app that visualizes the data col
 No specific requirements.
 
 ## Release Notes
+
+### 1.0.4
+
+-  Updated links in the navigation in the *Support* menu item.
 
 ### 1.0.3
 

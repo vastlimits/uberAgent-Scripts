@@ -1,6 +1,6 @@
 # Get-ProcessorTemperature: Determine the Current CPU Temperature
 
-This script is part of the uberAgent practice guide [Collecting the Processor Temperature With uberAgent](https://uberagent.com/docs/uberagent/latest/practice-guides/collect-processor-temperature-with-uberagent/).
+This script is part of the uberAgent practice guide [Collecting the Processor Temperature With uberAgent](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/collect-processor-temperature-with-uberagent).
 
 ## Description
 
