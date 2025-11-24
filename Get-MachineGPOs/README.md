@@ -1,6 +1,6 @@
 # Get-MachineGPOs: List All Applied Machine GPOs
 
-This script is part of the uberAgent practice guide [Documenting Applied Computer GPOs](https://uberagent.com/docs/uberagent/latest/practice-guides/documenting-applied-computer-gpos/).
+This script is part of the uberAgent practice guide [Documenting Applied Computer GPOs](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/documenting-applied-computer-gpos).
 
 ## Description
 

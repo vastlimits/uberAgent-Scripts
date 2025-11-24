@@ -1,6 +1,6 @@
 # Get-WinEvent: Query the Event Log for Events With a Specific Event ID
 
-This script is part of the uberAgent practice guide [Querying Windows Event Log](https://uberagent.com/docs/uberagent/latest/practice-guides/querying-windows-event-log-event-ids/).
+This script is part of the uberAgent practice guide [Querying Windows Event Log](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/querying-windows-event-log-event-ids).
 
 ## Description
 

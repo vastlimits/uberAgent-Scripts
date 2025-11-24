@@ -1,6 +1,6 @@
 # Get-DriverVersions: List All Installed Drivers
 
-This script is part of the uberAgent practice guide [Generating Driver Version Inventory Reports](https://uberagent.com/docs/uberagent/latest/practice-guides/generating-driver-version-inventory-reports/).
+This script is part of the uberAgent practice guide [Generating Driver Version Inventory Reports](https://docs.citrix.com/en-us/uberagent/current-release/practice-guides/generating-driver-version-inventory-reports).
 
 ## Description
 
