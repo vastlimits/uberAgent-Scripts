@@ -46,7 +46,7 @@
    <search id="Search_Single1">
       <query>
          index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
-         | eval HostUserBrowserProfileExtension = host . OsUser . Browser . ProfileDir . ExtensionId
+         | eval HostUserBrowserProfileExtension = host . OsUser . BrowserDisplayName . ProfileDir . ExtensionId
          | stats
             dc(host) as HostCount
             dc(OsUser) as OsUserCount
@@ -60,9 +60,9 @@
          index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
          | stats
             dc(ExtensionId) as ExtensionCount
-            by Browser
-         | xyseries Browser Browser ExtensionCount
-         | fields - Browser
+            by BrowserDisplayName
+         | xyseries BrowserDisplayName BrowserDisplayName ExtensionCount
+         | fields - BrowserDisplayName
          | stats values(*) as *
       </query>
    </search>
@@ -109,7 +109,7 @@
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $UserFilter$ $HostFilter$
-                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval HostUserBrowserProfile = host . OsUser . BrowserDisplayName . ProfileDir
                   | timechart span=1d useother=false
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                      by ExtensionName
@@ -152,7 +152,7 @@
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" $Panel31ExtensionFilter$ $UserFilter$ $HostFilter$
-                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval HostUserBrowserProfile = host . OsUser . BrowserDisplayName . ProfileDir
                   | eval HostUserBrowserProfileEnabled = if (ExtensionState==1, HostUserBrowserProfile, null())
                   | stats
                      latest(ExtensionName) as Name
@@ -161,7 +161,7 @@
                      dc(ExtensionVersion) as "#Versions"
                      dc(OsUser) as "#Users"
                      dc(host) as "#Hosts"
-                     values(Browser) as Browsers
+                     values(BrowserDisplayName) as Browsers
                      by ExtensionId
                   | eval "Browser(s)" = mvjoin(Browsers, ", ")
                   | eval sortfield = lower ('Name')
@@ -189,7 +189,7 @@
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
-                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval HostUserBrowserProfile = host . OsUser . BrowserDisplayName . ProfileDir
                   | timechart span=1d
                      dc(HostUserBrowserProfile) as ExtensionInstanceCount
                </query>
@@ -212,7 +212,7 @@
             <search>
                <query>
                   index=`uberAgent_index` sourcetype="uberAgent:Script:BrowserExtensionInventory" ExtensionId=$DrilldownFilterBy31ExtensionId$ $UserFilter$ $HostFilter$
-                  | eval HostUserBrowserProfile = host . OsUser . Browser . ProfileDir
+                  | eval HostUserBrowserProfile = host . OsUser . BrowserDisplayName . ProfileDir
                   | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
                   | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")
                   | eval InstalledByDefault = if (ExtensionInstalledByDefault == "True", "yes", "no")
@@ -224,7 +224,7 @@
                      latest(FromWebstore) as "From Web Store?"
                      latest(InstalledByDefault) as "Installed by default?"
                      latest(OsUser) as "OS user"
-                     latest(Browser) as Browser
+                     latest(BrowserDisplayName) as Browser
                      latest(ProfileDir) as "Profile"
                      latest(ProfileGaiaName) as "Profile Google name"
                      latest(ProfileUserName) as "Profile email"
