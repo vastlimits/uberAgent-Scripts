@@ -98,7 +98,7 @@ function PrintExtensionInfo
 
    # Field names
    $osUserNameField                    = "OsUser"
-   $browserNameField                   = "Browser"
+   $browserNameField                   = "BrowserDisplayName"
    $profileDirField                    = "ProfileDir"
    $profileNameField                   = "ProfileName"
    $profileGaiaNameField               = "ProfileGaiaName"
@@ -262,8 +262,13 @@ function GetExtensionInfoFromProfileChromium
          continue
       }
 
-      # Last install time
-      $updateTimeMs = ConvertChromeTimestampToEpochMs $extensionsJson.$extensionId.install_time
+      # Last install/update time. The field name varies across Chromium versions:
+      #   - Newer Chrome/Edge: last_update_time and first_install_time
+      #   - Older Chrome/Edge:  install_time
+      $rawTimestamp = $extensionsJson.$extensionId.last_update_time
+      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.install_time }
+      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.first_install_time }
+      $updateTimeMs = ConvertChromeTimestampToEpochMs $rawTimestamp
 
       # Manifest
       $manifestJson = $extensionsJson.$extensionId.manifest
@@ -377,15 +382,22 @@ function GetExtensionInfoFromProfileFirefox
 function ConvertChromeTimestampToEpochMs
 {
    Param(
-      [Parameter()][long] $chromeTimestamp
+      [Parameter()] $chromeTimestamp
    )
 
-   if ($chromeTimestamp -eq $null)
+   # A missing or empty field (e.g., install_time absent in newer profiles) must not be treated as a real timestamp
+   if ([string]::IsNullOrEmpty($chromeTimestamp))
    {
       return
    }
 
-   $filetime = $chromeTimestamp * 10
+   $chromeTimestampLong = [long] $chromeTimestamp
+   if ($chromeTimestampLong -le 0)
+   {
+      return
+   }
+
+   $filetime = $chromeTimestampLong * 10
    $datetime = [datetime]::FromFileTime($filetime)
    return ([DateTimeOffset]$datetime).ToUnixTimeMilliseconds()
 }
