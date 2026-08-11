@@ -2,7 +2,7 @@
 <form version="1.1" stylesheet="uberAgent:main.css">
 
    <label>Browser Extension Inventory</label>
-   <description>This dashboard visualizes extension inventory data collected by uberAgent.</description>
+   <description>This dashboard visualizes extension inventory data collected by Citrix Experience Insights.</description>
  
    <fieldset autoRun="true" submitButton="false">
       <input type="time" searchWhenChanged="true">
