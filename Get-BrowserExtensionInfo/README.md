@@ -38,7 +38,7 @@ No specific requirements.
 
 ### 1.0.5
 
-- Dashboard: the "Install time" column value is derived from `last_update_time`, falling back to `install_time` and finally `first_install_time`. The script now emits the new field `ExtensionInstallTimeSource`, and the dashboard appends the origin to each value (e.g. "(last update)" or "(first install)").
+- Dashboard: the "Install time" column value is derived from `last_update_time`, falling back to `install_time` and finally `first_install_time`. The script now emits the new field `ExtensionInstallTimeSource`, and the dashboard appends the origin to each value (e.g. "(last update)", "(install)" or "(first install)").
 - Chromium: also ignore browser-internal component extensions with location `10` (e.g. Chrome Web Store Payments) in addition to location `5`.
 - Dashboard: fixed the instance-details drilldown table sorting, which referenced a non-existent `Name` field; it now sorts by host.
 - Firefox: avoid a parameter-binding error when Firefox is not installed and no profiles directory exists.

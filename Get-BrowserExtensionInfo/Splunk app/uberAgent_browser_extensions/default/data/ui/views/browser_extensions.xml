@@ -222,7 +222,7 @@
                   | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
                   | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")
                   | eval InstalledByDefault = if (ExtensionInstalledByDefault == "True", "yes", "no")
-                  | eval TimeBasis = case(ExtensionInstallTimeSource == "first_install_time", "first install", ExtensionInstallTimeSource == "install_time" OR ExtensionInstallTimeSource == "last_update_time", "last update", 1=1, null())
+                  | eval TimeBasis = case(ExtensionInstallTimeSource == "last_update_time", "last update", ExtensionInstallTimeSource == "install_time", "install", ExtensionInstallTimeSource == "first_install_time", "first install", 1=1, null())
                   | eval ExtensionTime = strftime (ExtensionInstallTime/1000, "%Y-%m-%d %H:%M:%S")
                   | stats
                      latest(host) as Host
