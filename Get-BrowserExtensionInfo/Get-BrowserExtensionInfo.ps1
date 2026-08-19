@@ -1,6 +1,6 @@
 <#
   .SYNOPSIS
-  uberAgent script to collect information about the installed browser extensions for the current user.
+  Citrix Experience Insights script to collect information about the installed browser extensions for the current user.
 
   .DESCRIPTION
   Parses the browser profiles on disk to retrieve information about installed extensions.
