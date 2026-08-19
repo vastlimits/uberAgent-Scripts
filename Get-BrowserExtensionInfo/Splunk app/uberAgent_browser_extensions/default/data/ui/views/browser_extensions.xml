@@ -222,7 +222,8 @@
                   | eval ExtensionEnabled = if (ExtensionState == 1, "yes", "no")
                   | eval FromWebstore = if (ExtensionFromWebstore == "True", "yes", "no")
                   | eval InstalledByDefault = if (ExtensionInstalledByDefault == "True", "yes", "no")
-                  | eval InstallTime = strftime (ExtensionInstallTime/1000, "%Y-%m-%d %H:%M:%S")
+                  | eval TimeBasis = case(ExtensionInstallTimeSource == "first_install_time", "first install", ExtensionInstallTimeSource == "install_time" OR ExtensionInstallTimeSource == "last_update_time", "last update", 1=1, null())
+                  | eval ExtensionTime = strftime (ExtensionInstallTime/1000, "%Y-%m-%d %H:%M:%S")
                   | stats
                      latest(host) as Host
                      latest(ExtensionVersion) as "Ext. version"
@@ -234,9 +235,11 @@
                      latest(ProfileDir) as "Profile"
                      latest(ProfileGaiaName) as "Profile Google name"
                      latest(ProfileUserName) as "Profile email"
-                     latest(InstallTime) as "Install time"
+                     latest(ExtensionTime) as ExtensionTime
+                     latest(TimeBasis) as TimeBasis
                      by HostUserBrowserProfile
-                  | eval sortfield = lower ('Name')
+                  | eval "Install time" = case(isnull(ExtensionTime) OR ExtensionTime == "", "", isnotnull(TimeBasis), ExtensionTime . " (" . TimeBasis . ")", 1=1, ExtensionTime)
+                  | eval sortfield = lower ('Host')
                   | sort limit=0 sortfield
                   | table
                      Host

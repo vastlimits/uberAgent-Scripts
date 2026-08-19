@@ -61,8 +61,12 @@ function ProcessBrowser
    {
       # Firefox
 
-      # Get the profiles' parent directory
+      # Get the profiles' parent directory. If it doesn't exist (Firefox not installed), we cannot proceed.
       $profilesPath = GetFirefoxProfilesPath
+      if ($null -eq $profilesPath)
+      {
+         return
+      }
 
       # Process each profile
       foreach ($profileDirObject in Get-ChildItem -Path $profilesPath -Directory)
@@ -110,6 +114,7 @@ function PrintExtensionInfo
    $extensionInstalledByDefaultField   = "ExtensionInstalledByDefault"
    $extensionStateField                = "ExtensionState"
    $extensionInstallTimeField          = "ExtensionInstallTime"
+   $extensionInstallTimeSourceField    = "ExtensionInstallTimeSource"
 
    # Field data
    $userName         = GetUsername
@@ -126,10 +131,11 @@ function PrintExtensionInfo
       $extensionInstalledByDefault  = $extensionInfo[$extensionId].installedByDefault
       $extensionState               = $extensionInfo[$extensionId].state
       $extensionInstallTime         = $extensionInfo[$extensionId].installTime
+      $extensionInstallTimeSource   = $extensionInfo[$extensionId].installTimeSource
 
       $output = "$osUserNameField=`"$userName`" $browserNameField=`"$browserName`" $profileDirField=`"$profileDir`" $profileNameField=`"$profileName`" $profileGaiaNameField=`"$profileGaiaName`" $profileUserNameField=`"$profileUserName`" " + `
                 "$extensionIdField=`"$extensionId`" $extensionNameField=`"$extensionName`" $extensionVersionField=`"$extensionVersion`" $extensionFromWebstoreField=`"$extensionFromWebstore`" $extensionStateField=`"$extensionState`" " + `
-                "$extensionInstallTimeField=`"$extensionInstallTime`" $extensionInstalledByDefaultField=`"$extensionInstalledByDefault`""
+                "$extensionInstallTimeField=`"$extensionInstallTime`" $extensionInstallTimeSourceField=`"$extensionInstallTimeSource`" $extensionInstalledByDefaultField=`"$extensionInstalledByDefault`""
 
       Write-Output $output
    }
@@ -244,13 +250,21 @@ function GetExtensionInfoFromProfileChromium
       #    continue
       # }
 
-      # Ignore extensions located outside the user data directory (e.g., extensions that ship with the browser)
-      # Location values seen:
-      #    1: Profile (user data)
-      #    5: Install directory (program files)
-      #   10: Profile (user data) [not sure about the difference to 1]
+      # Ignore extensions that are internal browser components rather than user-facing extensions.
+      # Chromium ManifestLocation values:
+      #    1: Internal              (user-installed, e.g. from the web store)
+      #    2: External pref         (third-party, registered via JSON)
+      #    3: External registry     (third-party, registered via registry)
+      #    4: Unpacked              (developer/load-unpacked)
+      #    5: Component             (built into the browser)
+      #    6: External pref download
+      #    7: External policy download (force-installed by policy)
+      #    8: Command line
+      #    9: External policy
+      #   10: External component    (browser component, e.g. Chrome Web Store Payments, Cloud Print)
+      # Locations 5 and 10 are browser-internal components and are not treated as real user extensions.
       $location = $extensionsJson.$extensionId.location
-      if ($location -eq 5)
+      if ($location -eq 5 -or $location -eq 10)
       {
          continue
       }
@@ -262,12 +276,16 @@ function GetExtensionInfoFromProfileChromium
          continue
       }
 
-      # Last install/update time. The field name varies across Chromium versions:
-      #   - Newer Chrome/Edge: last_update_time and first_install_time
-      #   - Older Chrome/Edge:  install_time
+      # Last update time. The field name varies across Chromium versions:
+      #   - Newer Chrome/Edge: last_update_time
+      #   - Older Chrome/Edge:  install_time (also refreshed on update, so a valid proxy)
+      # As a last resort we fall back to first_install_time. The source is reported separately
+      # so the dashboard can label the value (last update vs. first install).
       $rawTimestamp = $extensionsJson.$extensionId.last_update_time
-      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.install_time }
-      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.first_install_time }
+      $timeSource   = "last_update_time"
+      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.install_time;       $timeSource = "install_time" }
+      if ([string]::IsNullOrEmpty($rawTimestamp)) { $rawTimestamp = $extensionsJson.$extensionId.first_install_time; $timeSource = "first_install_time" }
+      if ([string]::IsNullOrEmpty($rawTimestamp)) { $timeSource = "" }
       $updateTimeMs = ConvertChromeTimestampToEpochMs $rawTimestamp
 
       # Manifest
@@ -288,7 +306,8 @@ function GetExtensionInfoFromProfileChromium
          fromWebstore         = $extensionsJson.$extensionId.from_webstore             # Was the extension installed from the Chrome Web Store?
          installedByDefault   = $extensionsJson.$extensionId.was_installed_by_default  # Was the extension installed by default?
          state                = $extensionsJson.$extensionId.state                     # Extension state (1 = enabled)
-         installTime          = $updateTimeMs                                          # Timestamp of the last installation (= update) as Unix epoch in ms
+         installTime          = $updateTimeMs                                          # Timestamp of the last update (falls back to install time) as Unix epoch in ms
+         installTimeSource    = $timeSource                                            # Which timestamp field the value came from (last_update_time/install_time/first_install_time)
       }
 
       # Add this extension to the list of extensions
@@ -364,6 +383,7 @@ function GetExtensionInfoFromProfileFirefox
          fromWebstore         = $fromFirefoxAddons          # Was the extension installed from Firefox Addons?
          state                = $state                      # Extension state (1 = enabled)
          installTime          = $extensionJson.updateDate   # Last update timestamp as Unix epoch in ms
+         installTimeSource    = "last_update_time"          # Firefox reports the last update date
       }
 
       # Add this extension to the list of extensions
